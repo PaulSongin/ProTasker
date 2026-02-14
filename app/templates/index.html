@@ -2,29 +2,144 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ProTasker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProTasker | Task Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .task-card { transition: transform 0.2s; }
+        .task-card:hover { transform: scale(1.01); }
+        .status-badge { font-size: 0.8rem; }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1>My Tasks</h1>
-        <div id="task-list" class="list-group mt-3">
+<body>
+
+<nav class="navbar navbar-dark bg-primary mb-4">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">ProTasker Tool</span>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Create New Task</h5>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="userId" class="form-label">Your User ID</label>
+                        <input type="number" id="userId" class="form-control" placeholder="Enter ID (e.g., 1)" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label">Task Title</label>
+                        <input type="text" id="taskTitle" class="form-control" placeholder="What needs to be done?" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDesc" class="form-label">Description (Optional)</label>
+                        <textarea id="taskDesc" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button onclick="addTask()" class="btn btn-primary w-100">Add Task</button>
+                </div>
+            </div>
+
+            <div class="alert alert-info shadow-sm">
+                <strong>Tip:</strong> You can find your User ID in the Swagger docs after registration.
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h4">Global Task List</h2>
+                <button onclick="fetchTasks()" class="btn btn-sm btn-outline-secondary">Refresh List</button>
+            </div>
+
+            <div id="task-list" class="list-group shadow-sm">
+                <div class="text-center p-5 bg-white border rounded">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Loading tasks...</p>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        async function fetchTasks() {
-            const response = await fetch('/api/tasks');
+<script>
+    async function fetchTasks() {
+        try {
+            const response = await fetch('/tasks/');
             const tasks = await response.json();
+
             const list = document.getElementById('task-list');
+            list.innerHTML = ''; // Clear the loader
+
+            if (tasks.length === 0) {
+                list.innerHTML = '<div class="list-group-item text-center p-4">No tasks found. Create one!</div>';
+                return;
+            }
+
             tasks.forEach(task => {
                 const item = document.createElement('div');
-                item.className = 'list-group-item';
-                item.innerText = `${task.title} - ${task.is_completed ? '✅' : '⏳'}`;
+                item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-start task-card';
+
+                const statusBadge = task.is_completed
+                    ? '<span class="badge bg-success rounded-pill status-badge">Completed</span>'
+                    : '<span class="badge bg-warning text-dark rounded-pill status-badge">In Progress</span>';
+
+                item.innerHTML = `
+                    <div class="ms-2 me-auto">
+                        <div class="fw-bold">${task.title}</div>
+                        <small class="text-muted">${task.description || 'No description'}</small>
+                        <div class="mt-1" style="font-size: 0.75rem;">Owner ID: ${task.owner_id}</div>
+                    </div>
+                    ${statusBadge}
+                `;
                 list.appendChild(item);
             });
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+            document.getElementById('task-list').innerHTML = '<div class="alert alert-danger">Failed to load tasks.</div>';
         }
-        fetchTasks();
-    </script>
+    }
+
+    async function addTask() {
+        const userId = document.getElementById('userId').value;
+        const title = document.getElementById('taskTitle').value;
+        const description = document.getElementById('taskDesc').value;
+
+        if (!userId || !title) {
+            alert("Please fill in both User ID and Task Title");
+            return;
+        }
+
+        try {
+            const response = await fetch(`/users/${userId}/tasks/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    description: description
+                })
+            });
+
+            if (response.ok) {
+                document.getElementById('taskTitle').value = '';
+                document.getElementById('taskDesc').value = '';
+                fetchTasks();
+            } else {
+                const errorData = await response.json();
+                alert(`Error: ${errorData.detail || "Could not add task"}`);
+            }
+        } catch (error) {
+            alert("Connection error. Is the server running?");
+        }
+    }
+
+    window.onload = fetchTasks;
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
