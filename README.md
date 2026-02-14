@@ -29,25 +29,18 @@ This project was developed to demonstrate modern software engineering patterns, 
 git clone https://github.com/YOUR_USERNAME/ProTasker.git
 cd ProTasker
 2. Set up a virtual environment
-code
-Bash
 python -m venv .venv
 # On Windows:
 .venv\Scripts\activate
 # On macOS/Linux:
 source .venv/bin/activate
 3. Install dependencies
-code
-Bash
 pip install -r requirements.txt
 4. Database Configuration
 Create a .env file in the root directory and add your PostgreSQL credentials:
-code
 Env
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/protasker_db
 5. Run the application
-code
-Bash
 uvicorn app.main:app --reload
 The app will be available at: http://127.0.0.1:8000
 📖 API Documentation
@@ -56,12 +49,8 @@ Swagger UI: http://127.0.0.1:8000/docs
 ReDoc: http://127.0.0.1:8000/redoc
 🧪 Running Tests
 To run the automated test suite, use the following command:
-code
-Bash
 python -m pytest
 📁 Project Structure
-code
-Text
 ProTasker/
 ├── app/
 │   ├── main.py          # Application entry point & API routes
